@@ -6,8 +6,9 @@ from tqdm import tqdm
 
 from yolo import YOLO
 from models.core.utils import get_classes
-from models.core.utils_map import get_coco_map, get_map, get_coco_map_one
+from models.core.utils_map import get_coco_map, get_map
 import argparse
+import random
 
 if __name__ == "__main__":
     '''
@@ -27,18 +28,16 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='val')
     parser.add_argument('--model-path', default='')
-    parser.add_argument('--model-config', default='models/new/yolox6.py')
+    parser.add_argument('--model-config', default='models/ffa/yolox_ffa.py')
     parser.add_argument('--decode-mode', default='default', help='default/obj_sigmoid/cls_sigmoid/no_sigmoid')
     args = parser.parse_args()
     model_path = args.model_path
     config_path = args.model_config
     decode_mode = args.decode_mode
-
     # map_out_path = 'results/tmp' + str(int(random.random() * 100000))
-    map_out_path = 'new_results/yolox6loss_768'
-
+    map_out_path = 'results/ufp768'
     map_mode = 0
-    nms_iou = 0.50
+    nms_iou = 0.65
     # -------------------------------------------------------#
     #   此处的classes_path用于指定需要测量VOC_map的类别
     #   一般情况下与训练和预测所用的classes_path一致即可
@@ -57,13 +56,11 @@ if __name__ == "__main__":
     #   指向VOC数据集所在的文件夹
     #   默认指向根目录下的VOC数据集
     # -------------------------------------------------------#
-    VOCdevkit_path = 'VOCdevkit_val'
+    VOCdevkit_path = 'myufp_val'
     # -------------------------------------------------------#
     #   结果输出的文件夹，默认为map_out
     # -------------------------------------------------------#
     import random
-    # map_out_path = 'results/tmp' + str(int(random.random() * 100000))
-    # # map_out_path = 'results/tmp'
     print(map_out_path)
     image_ids = open(os.path.join(VOCdevkit_path, "VOC2007/ImageSets/Main/test.txt")).read().strip().split()
 
@@ -80,7 +77,7 @@ if __name__ == "__main__":
 
     if map_mode == 0 or map_mode == 1:
         print("Load model.")
-        yolo = YOLO(confidence=0.1, nms_iou=nms_iou, model_path=model_path, config_path=config_path, decode_mode=decode_mode)
+        yolo = YOLO(confidence=0.0001, nms_iou=nms_iou, model_path=model_path, config_path=config_path, decode_mode=decode_mode)
         print("Load model done.")
 
         print("Get predict result.")
@@ -123,8 +120,10 @@ if __name__ == "__main__":
         get_map(MINOVERLAP, True, path=map_out_path)
         print("Get map done.")
 
-    if map_mode == 0:
-        print("Get map.")
-        get_coco_map(class_names=class_names, path=map_out_path)
-        # get_coco_map_one(class_names=class_names, path=map_out_path)
-        print("Get map done.")
+    # if map_mode == 0:
+    #     print("Get map.")
+    #     get_coco_map(class_names=class_names, path=map_out_path)
+    #     print("Get map done.")
+
+
+

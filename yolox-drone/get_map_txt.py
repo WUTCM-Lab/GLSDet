@@ -1,12 +1,6 @@
 import os
-import xml.etree.ElementTree as ET
-
-from PIL import Image
-from tqdm import tqdm
-
-from yolo import YOLO
 from models.core.utils import get_classes
-from models.core.utils_map import get_coco_map, get_map, get_coco_map_one
+from models.core.utils_map import get_coco_map, get_map, get_coco_map_txt
 import argparse
 
 if __name__ == "__main__":
@@ -27,7 +21,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='val')
     parser.add_argument('--model-path', default='')
-    parser.add_argument('--model-config', default='models/new/yolox6.py')
+    parser.add_argument('--model-config', default='models/ffa/yolox_ffa.py')
     parser.add_argument('--decode-mode', default='default', help='default/obj_sigmoid/cls_sigmoid/no_sigmoid')
     args = parser.parse_args()
     model_path = args.model_path
@@ -35,10 +29,10 @@ if __name__ == "__main__":
     decode_mode = args.decode_mode
 
     # map_out_path = 'results/tmp' + str(int(random.random() * 100000))
-    map_out_path = 'new_results/yolox6loss_768'
+    map_out_path = 'results/tmp'
 
     map_mode = 0
-    nms_iou = 0.50
+    nms_iou = 0.65
     # -------------------------------------------------------#
     #   此处的classes_path用于指定需要测量VOC_map的类别
     #   一般情况下与训练和预测所用的classes_path一致即可
@@ -78,53 +72,57 @@ if __name__ == "__main__":
 
     class_names, _ = get_classes(classes_path)
 
-    if map_mode == 0 or map_mode == 1:
-        print("Load model.")
-        yolo = YOLO(confidence=0.1, nms_iou=nms_iou, model_path=model_path, config_path=config_path, decode_mode=decode_mode)
-        print("Load model done.")
-
-        print("Get predict result.")
-        for image_id in tqdm(image_ids):
-            image_path = os.path.join(VOCdevkit_path, "VOC2007/JPEGImages/" + image_id + ".jpg")
-            image = Image.open(image_path)
-            if map_vis:
-                image.save(os.path.join(map_out_path, "images-optional/" + image_id + ".jpg"))
-            yolo.get_map_txt(image_id, image, class_names, map_out_path)
-        print("Get predict result done.")
-
-    if map_mode == 0 or map_mode == 2:
-        print("Get ground truth result.")
-        for image_id in tqdm(image_ids):
-            with open(os.path.join(map_out_path, "ground-truth/" + image_id + ".txt"), "w") as new_f:
-                root = ET.parse(os.path.join(VOCdevkit_path, "VOC2007/Annotations/" + image_id + ".xml")).getroot()
-                for obj in root.findall('object'):
-                    difficult_flag = False
-                    if obj.find('difficult') != None:
-                        difficult = obj.find('difficult').text
-                        if int(difficult) == 1:
-                            difficult_flag = True
-                    obj_name = obj.find('name').text
-                    if obj_name not in class_names:
-                        continue
-                    bndbox = obj.find('bndbox')
-                    left = bndbox.find('xmin').text
-                    top = bndbox.find('ymin').text
-                    right = bndbox.find('xmax').text
-                    bottom = bndbox.find('ymax').text
-
-                    if difficult_flag:
-                        new_f.write("%s %s %s %s %s difficult\n" % (obj_name, left, top, right, bottom))
-                    else:
-                        new_f.write("%s %s %s %s %s\n" % (obj_name, left, top, right, bottom))
-        print("Get ground truth result done.")
-
-    if map_mode == 5 or map_mode == 3:
-        print("Get map.")
-        get_map(MINOVERLAP, True, path=map_out_path)
-        print("Get map done.")
+    # if map_mode == 0 or map_mode == 1:
+    #     print("Load model.")
+    #     yolo = YOLO(confidence=0.0001, nms_iou=nms_iou, model_path=model_path, config_path=config_path, decode_mode=decode_mode)
+    #     print("Load model done.")
+    #
+    #     print("Get predict result.")
+    #     for image_id in tqdm(image_ids):
+    #         image_path = os.path.join(VOCdevkit_path, "VOC2007/JPEGImages/" + image_id + ".jpg")
+    #         image = Image.open(image_path)
+    #         if map_vis:
+    #             image.save(os.path.join(map_out_path, "images-optional/" + image_id + ".jpg"))
+    #         yolo.get_map_txt(image_id, image, class_names, map_out_path)
+    #     print("Get predict result done.")
+    #
+    # if map_mode == 0 or map_mode == 2:
+    #     print("Get ground truth result.")
+    #     for image_id in tqdm(image_ids):
+    #         with open(os.path.join(map_out_path, "ground-truth/" + image_id + ".txt"), "w") as new_f:
+    #             root = ET.parse(os.path.join(VOCdevkit_path, "VOC2007/Annotations/" + image_id + ".xml")).getroot()
+    #             for obj in root.findall('object'):
+    #                 difficult_flag = False
+    #                 if obj.find('difficult') != None:
+    #                     difficult = obj.find('difficult').text
+    #                     if int(difficult) == 1:
+    #                         difficult_flag = True
+    #                 obj_name = obj.find('name').text
+    #                 if obj_name not in class_names:
+    #                     continue
+    #                 bndbox = obj.find('bndbox')
+    #                 left = bndbox.find('xmin').text
+    #                 top = bndbox.find('ymin').text
+    #                 right = bndbox.find('xmax').text
+    #                 bottom = bndbox.find('ymax').text
+    #
+    #                 if difficult_flag:
+    #                     new_f.write("%s %s %s %s %s difficult\n" % (obj_name, left, top, right, bottom))
+    #                 else:
+    #                     new_f.write("%s %s %s %s %s\n" % (obj_name, left, top, right, bottom))
+    #     print("Get ground truth result done.")
+    #
+    # if map_mode == 5 or map_mode == 3:
+    #     print("Get map.")
+    #     get_map(MINOVERLAP, True, path=map_out_path)
+    #     print("Get map done.")
 
     if map_mode == 0:
         print("Get map.")
-        get_coco_map(class_names=class_names, path=map_out_path)
-        # get_coco_map_one(class_names=class_names, path=map_out_path)
+        get_coco_map_txt(
+        class_names,
+        "/home/server2/shk/yolox_drone/results/baseline640/ground-truth",
+        "/home/server2/shk/yolox_drone/results/test0218",
+        "/home/server2/shk/yolox_drone/results/0000tmp"
+        )
         print("Get map done.")
